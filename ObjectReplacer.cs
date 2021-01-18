@@ -1,3 +1,7 @@
+// Copyright (c) 2021 Hiroyuki Kako
+// This software is released under the MIT License, see LICENSE.
+
+#if UNITY_EDITOR
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
@@ -6,20 +10,20 @@ namespace ObjectReplacer
 {
     public class ObjectReplacer : EditorWindow
     {
-        [MenuItem("ObjectReplacer/Window")]
+        [MenuItem("KEditorExtensions/ObjectReplacer")]
         private static void Open()
         {
             GetWindow<ObjectReplacer>("Replace object in scene.");
         }
 
+        static GameObject expectedObject;
 
-        public GameObject[] _targetObjectsInEditor;
-        public GameObject _expectedObjectInEditor;
+        public GameObject[] targetObjectsInEditor;
+        public GameObject expectedObjectInEditor;
 
-        private static GameObject _expectedObject;
         private static List<GameObject> _cachedObjects = new List<GameObject>();
 
-        [MenuItem("GameObject/DO REPLACE", false, 20)]
+        [MenuItem("GameObject/KEditorExtensions/ObjectReplacer/DO_REPLACE", false, 20)]
         public static void DO_REPLACE()
         {
             var tmp = Selection.gameObjects;
@@ -42,16 +46,16 @@ namespace ObjectReplacer
         {
             EditorGUILayout.BeginHorizontal();
             EditorGUILayout.LabelField("Object of destinations to convert.");
-            _expectedObjectInEditor =
-                (GameObject) EditorGUILayout.ObjectField(_expectedObjectInEditor, typeof(GameObject), true);
-            _expectedObject = _expectedObjectInEditor;
+            expectedObjectInEditor =
+                (GameObject) EditorGUILayout.ObjectField(expectedObjectInEditor, typeof(GameObject), true);
+            expectedObject = expectedObjectInEditor;
             EditorGUILayout.EndHorizontal();
 
             ScriptableObject target = this;
 
             SerializedObject so = new SerializedObject(target);
 
-            SerializedProperty stringsProperty = so.FindProperty("_targetObjectsInEditor");
+            SerializedProperty stringsProperty = so.FindProperty("targetObjectsInEditor");
 
             EditorGUILayout.PropertyField(stringsProperty, true);
 
@@ -59,35 +63,35 @@ namespace ObjectReplacer
 
 
             EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.LabelField("Right click on hierarchy and select DO REPLACE or d&d and push button.");
+            EditorGUILayout.LabelField("Right click on hierarchy and select DO REPLACE or push button.");
             EditorGUILayout.EndHorizontal();
 
             if (GUILayout.Button("DO REPLACE"))
             {
                 _cachedObjects.Clear();
-                _cachedObjects = new List<GameObject>(_targetObjectsInEditor);
-                _expectedObject = _expectedObjectInEditor;
+                _cachedObjects = new List<GameObject>(targetObjectsInEditor);
+                expectedObject = expectedObjectInEditor;
                 ReplaceFunction();
-                _targetObjectsInEditor = new GameObject[0];
+                targetObjectsInEditor = new GameObject[0];
             }
         }
 
         private static void ReplaceFunction()
         {
-            if (_expectedObject != null)
+            if (expectedObject != null)
             {
-                foreach (var cachedObject in _cachedObjects)
+                foreach (var tmp in _cachedObjects)
                 {
                     GameObject newObj =
-                        PrefabUtility.InstantiatePrefab(_expectedObject) as GameObject;
+                        PrefabUtility.InstantiatePrefab(expectedObject) as GameObject;
                     if (!(newObj is null))
                     {
-                        newObj.transform.position = cachedObject.transform.position;
-                        newObj.transform.eulerAngles = cachedObject.transform.eulerAngles;
-                        newObj.transform.SetParent(cachedObject.transform.parent);
+                        newObj.transform.position = tmp.transform.position;
+                        newObj.transform.eulerAngles = tmp.transform.eulerAngles;
+                        newObj.transform.SetParent(tmp.transform.parent);
                     }
 
-                    DestroyImmediate(cachedObject);
+                    DestroyImmediate(tmp);
                 }
             }
             else
@@ -97,3 +101,4 @@ namespace ObjectReplacer
         }
     }
 }
+#endif
